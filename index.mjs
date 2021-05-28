@@ -11,13 +11,24 @@ import * as backend from './build/index.main.mjs';
   const ctcAlice = alice.deploy(backend);
   const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw','Alice wins'];
+  
+  const Player = (Who) => ({
+    getHand: () => {
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} player ${HAND[hand]}`);
+      return hand
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+  })
+
+
   await Promise.all([
-    backend.Alice(ctcAlice, {
-      ...stdlib.hasRandom
-    }),
-    backend.Bob(ctcBob, {
-      ...stdlib.hasRandom
-    }),
+    backend.Alice(ctcAlice, Player('Alice')),
+    backend.Bob(ctcBob, Player(Bob)),
   ]);
 
   console.log('Hello, Alice and Bob!');
