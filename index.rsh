@@ -4,31 +4,24 @@ const Player = {
 	getHand: Fun([], UInt),
 	seeOutcome: Fun([UInt], Null),
 }
-export const main = 
-Reach.App(
-  {}, 
-  [
-    Participant("Alice", Player), 
-    Participant("Bob", Player)
-  ], 
-  (Alice, Bob) => {
-    Alice.only(() => {
-      const handA = declassify(interact.getHand())
-    })
-    Alice.publish(handA)
-    commit()
+export const main = Reach.App({}, [Participant("Alice", Player), Participant("Bob", Player)], (A, B) => {
+	A.only(() => {
+		const handA = declassify(interact.getHand())
+	})
+	A.publish(handA)
+	commit()
 
-    Bob.only(() => {
-      const handB = declassify(interact.getHand())
-    })
-    Bob.publish(handB)
+	B.only(() => {
+		const handB = declassify(interact.getHand())
+	})
+	B.publish(handB)
 
-    const outcome = (handA + (4 - handB)) % 3;
-    commit();
+	const outcome = (handA + (4 - handB)) % 3
+	commit()
 
-    each([Alice, Bob],  () => {
-      interact.seeOutcome(outcome)
-    })
+	each([A, B], () => {
+		interact.seeOutcome(outcome)
+	})
 
-    exit()
-  });
+	exit()
+})

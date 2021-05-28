@@ -8,7 +8,7 @@ class Sudoku {
     }
     
     /**
-     * Gets the state of the baord
+     * Gets the state of the board
      * @returns 2d-array representing the board's state
      */
     getBoard(){
