@@ -1,31 +1,62 @@
-import { loadStdlib } from "@reach-sh/stdlib"
-import * as backend from "./build/index.main.mjs"
+import { loadStdlib } from "@reach-sh/stdlib";
+import * as backend from "./build/index.main.mjs";
 
-;(async () => {
-	const stdlib = await loadStdlib()
-	const startingBalance = stdlib.parseCurrency(100)
+(async () => {
+  const stdlib = await loadStdlib();
+  const startingBalance = stdlib.parseCurrency(100);
 
-	const alice = await stdlib.newTestAccount(startingBalance)
-	const bob = await stdlib.newTestAccount(startingBalance)
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
 
-	const ctcAlice = alice.deploy(backend)
-	const ctcBob = bob.attach(backend, ctcAlice.getInfo())
+  // displays currency amounts up to 4 decimals
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  // gets balance of player and displays it
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
 
-	const HAND = ["Rock", "Paper", "Scissors"]
-	const OUTCOME = ["Bob wins", "Draw", "Alice wins"]
+  // get balances pre-game
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
 
-	const Player = (Who) => ({
-		getHand: () => {
-			const hand = Math.floor(Math.random() * 3)
-			console.log(`${Who} player ${HAND[hand]}`)
-			return hand
-		},
-		seeOutcome: (outcome) => {
-			console.log(`${Who} saw outcome ${OUTCOME[outcome]}`)
-		},
-	})
+  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
-	await Promise.all([backend.Alice(ctcAlice, Player("Alice")), backend.Bob(ctcBob, Player("Bob"))])
+  const HAND = ["Rock", "Paper", "Scissors"];
+  const OUTCOME = ["Bob wins", "Draw", "Alice wins"];
 
-	console.log("Hello, Alice and Bob!")
-})()
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: () => {
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} player ${HAND[hand]}`);
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    }
+  });
+
+  await Promise.all([
+    backend.Alice(ctcAlice, {
+      ...Player("Alice"),
+      wager: stdlib.parseCurrency(5),
+    }),
+    backend.Bob(ctcBob, {
+      ...Player("Bob"),
+      acceptWager: async (amt) => {
+        await stdlib.wait(11)
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      }
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}`);
+
+  console.log("Hello, Alice and Bob!");
+})();
